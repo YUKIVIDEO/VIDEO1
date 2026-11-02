@@ -24,9 +24,9 @@
 <footer class="foot"><b>¥ 500円娯楽</b><span>熊本の楽しみを、500円から。</span></footer></main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ★ここにご自身のURLとPublishable keyを貼ってください
+// ★ご自身のURLとPublishable keyを設定済み
 const SUPABASE_URL = 'https://dxulwufqorvsqlayadaj.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_wxy...';
+const SUPABASE_KEY = 'sb_publishable_wxyhbGNmhlTpJSqU0PEGiA_0v6P1met';
 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let adminMode = false;
@@ -109,6 +109,7 @@ document.getElementById('form').onsubmit=async e=>{
     if(error) setStatus('登録に失敗しました: '+error.message, false);
   }
   
+  data=null;
   draft=null;
   cancelEdit(false);
   await loadSpots();
