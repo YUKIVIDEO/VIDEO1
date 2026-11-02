@@ -17,17 +17,16 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px"><b id="count">スポット 0件</b></div><div class="grid" id="spots"></div><p id="empty" class="hidden" style="text-align:center;padding:25px;color:#887e71">条件に合うスポットがないよ。予算やジャンルを変えてみてね。</p></section>
 <section class="section" id="map-section"><div class="eyebrow">EXPLORE KUMAMOTO</div><h2 class="heading">マップで探そう 📍</h2><p class="desc">登録したピンを押すと詳細が見られるよ。地図をクリックすると登録する位置も選べるよ。</p><div class="panel"><div class="mapbox"><div id="map"></div></div><div class="tiny" id="mapStatus" style="margin-top:9px">地図を読み込み中…</div><div id="mapInfo" class="panel" style="margin-top:12px;background:#f8f4e9"><b>マップ上のピンを選んでね</b><p class="desc">スポットの詳細がここに表示されるよ。</p></div></div></section>
 <section class="section" id="register"><div class="eyebrow">ADD A LOCAL SPOT</div><h2 class="heading">おすすめスポットを登録しよう！</h2><p class="desc">名前や住所を入力して登録。登録した場所は検索とマップに反映されるよ。</p><div class="panel"><div id="editing" class="status hidden">スポットを編集中です。</div><form id="form" class="formgrid"><input id="id" type="hidden">
-<div><label class="label" for="name">場所・お店の名前 *</label><input id="name" class="field" maxlength="80" required placeholder="例：お気に入りの公園"></div><div><label class="label" for="genre">ジャンル *</label><select id="genre" class="field"><option>グルメ</option><option>自然</option><option>観光</option><option>体験</option></select></div>
-<div><label class="label" for="cost">予算（円）*</label><input id="cost" class="field" type="number" min="0" max="500" step="10" value="0" required><div class="tiny">500円以内のスポットを登録できます。</div></div><div><label class="label" for="address">住所・場所 *</label><input id="address" class="field" maxlength="160" required placeholder="例：熊本市中央区…"><div class="tiny">住所から位置を検索します。</div></div>
-<div class="full"><label class="label" for="desc">おすすめポイント *</label><textarea id="desc" class="field" maxlength="300" rows="3" required placeholder="どんなことが楽しめる？"></textarea></div>
+<div><label class="label" for="name">場所・お店の名前 *</label><input id="nameInput" class="field" maxlength="80" required placeholder="例：お気に入りの公園"></div><div><label class="label" for="genre">ジャンル *</label><select id="genreSelect" class="field"><option>グルメ</option><option>自然</option><option>観光</option><option>体験</option></select></div>
+<div><label class="label" for="cost">予算（円）*</label><input id="costInput" class="field" type="number" min="0" max="500" step="10" value="0" required><div class="tiny">500円以内のスポットを登録できます。</div></div><div><label class="label" for="address">住所・場所 *</label><input id="addressInput" class="field" maxlength="160" required placeholder="例：熊本市中央区…"><div class="tiny">住所から位置を検索します。</div></div>
+<div class="full"><label class="label" for="desc">おすすめポイント *</label><textarea id="descInput" class="field" maxlength="300" rows="3" required placeholder="どんなことが楽しめる？"></textarea></div>
 <div class="full actions"><button id="save" class="btn coral" type="submit">📍 登録してマップに追加</button><button id="cancel" class="btn muted hidden" type="button" onclick="cancelEdit()">編集をキャンセル</button><button class="btn muted" type="button" onclick="findAddress()">住所から位置を確認</button></div></form><div id="formStatus" class="status hidden" role="status"></div></div></section>
 <footer class="foot"><b>¥ 500円娯楽</b><span>熊本の楽しみを、500円から。</span></footer></main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ★ご自身のURLとPublishable keyを設定済み
 const SUPABASE_URL = 'https://dxulwufqorvsqlayadaj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_wxyhbGNmhlTpJSqU0PEGiA_0v6P1met';
-supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let adminMode = false;
 async function toggleAdmin() {
@@ -88,11 +87,11 @@ function refreshMarkers(found=spots){if(!map)return;let ids=new Set(found.map(s=
 function showInfo(s){mapInfo.innerHTML=`<div class="eyebrow">SELECTED SPOT</div><h3>${esc(s.name)}</h3><span class="badge">${esc(s.genre)}</span><span class="badge">${costText(s.cost)}</span><p class="desc">${esc(s.desc)}</p><p class="address">📍 ${esc(s.address)}</p><div class="actions">${adminMode?`<button class="btn muted" onclick="editSpot('${esc(s.id)}')">編集</button>`:''}<a class="btn primary" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}">地図アプリで開く ↗</a></div>`}
 function selectSpot(id){let s=spots.find(x=>String(x.id)===String(id));if(!s)return;showInfo(s);if(map&&Number.isFinite(+s.lat)&&Number.isFinite(+s.lng)){map.setView([+s.lat,+s.lng],15);markers[s.id]?.openPopup()}document.getElementById('map-section').scrollIntoView({behavior:'smooth'})}
 async function geocode(a){let r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=jp&q='+encodeURIComponent(a),{headers:{'Accept-Language':'ja'}});if(!r.ok)throw Error('住所検索サービスに接続できませんでした。');let v=await r.json();if(!v.length)throw Error('位置が見つかりません。住所を詳しくするか、地図上をクリックしてください。');return {lat:+v[0].lat,lng:+v[0].lon}}
-async function findAddress(){let a=address.value.trim();if(!a)return setStatus('先に住所や場所を入力してね。',false);if(!map)return setStatus('地図を読み込めません。接続を確認してください。',false);try{setStatus('住所から位置を検索中…');draft=await geocode(a);map.setView([draft.lat,draft.lng],16);L.popup().setLatLng([draft.lat,draft.lng]).setContent('検索した位置（登録時に保存）').openOn(map);setStatus('位置が見つかったよ。登録ボタンで保存してね。')}catch(e){setStatus(e.message,false)}}
+async function findAddress(){let a=addressInput.value.trim();if(!a)return setStatus('先に住所や場所を入力してね。',false);if(!map)return setStatus('地図を読み込めません。接続を確認してください。',false);try{setStatus('住所から位置を検索中…');draft=await geocode(a);map.setView([draft.lat,draft.lng],16);L.popup().setLatLng([draft.lat,draft.lng]).setContent('検索した位置（登録時に保存）').openOn(map);setStatus('位置が見つかったよ。登録ボタンで保存してね。')}catch(e){setStatus(e.message,false)}}
 
 document.getElementById('form').onsubmit=async e=>{
   e.preventDefault();
-  let id=document.getElementById('id').value,n=name.value.trim(),g=genre.value,c=+cost.value,a=address.value.trim(),d=desc.value.trim();
+  let id=document.getElementById('id').value,n=nameInput.value.trim(),g=genreSelect.value,c=+costInput.value,a=addressInput.value.trim(),d=descInput.value.trim();
   if(!n||!a||!d||!Number.isFinite(c)||c<0||c>500)return setStatus('必要な項目を入力し、予算を0〜500円にしてね。',false);
   save.disabled=true;
   let p=draft,old=spots.find(s=>String(s.id)===String(id));
@@ -109,7 +108,6 @@ document.getElementById('form').onsubmit=async e=>{
     if(error) setStatus('登録に失敗しました: '+error.message, false);
   }
   
-  data=null;
   draft=null;
   cancelEdit(false);
   await loadSpots();
@@ -121,11 +119,11 @@ function editSpot(id){
   let s=spots.find(x=>String(x.id)===String(id));
   if(!s)return;
   document.getElementById('id').value=s.id;
-  name.value=s.name;
-  genre.value=s.genre;
-  cost.value=s.cost;
-  address.value=s.address;
-  desc.value=s.desc;
+  nameInput.value=s.name;
+  genreSelect.value=s.genre;
+  costInput.value=s.cost;
+  addressInput.value=s.address;
+  descInput.value=s.desc;
   draft=Number.isFinite(+s.lat)?{lat:+s.lat,lng:+s.lng}:null;
   editing.classList.remove('hidden');
   cancel.classList.remove('hidden');
@@ -133,7 +131,7 @@ function editSpot(id){
   document.getElementById('register').scrollIntoView({behavior:'smooth'})
 }
 
-function cancelEdit(clear=true){document.getElementById('form').reset();document.getElementById('id').value='';cost.value=0;editing.classList.add('hidden');cancel.classList.add('hidden');save.textContent='📍 登録してマップに追加';draft=null;if(clear)formStatus.classList.add('hidden')}
+function cancelEdit(clear=true){document.getElementById('form').reset();document.getElementById('id').value='';costInput.value=0;editing.classList.add('hidden');cancel.classList.add('hidden');save.textContent='📍 登録してマップに追加';draft=null;if(clear)formStatus.classList.add('hidden')}
 
 async function deleteSpot(id){
   if(!adminMode){alert('削除は管理者のみ利用できます。');return;}
@@ -155,7 +153,7 @@ if(window.L){
   mapStatus.textContent='ピンを押すと詳細を確認できます。地図をクリックすると登録位置を指定できます。';
   map.on('click',e=>{
     draft={lat:e.latlng.lat,lng:e.latlng.lng};
-    address.value=`地図で指定した場所 (${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)})`;
+    addressInput.value=`地図で指定した場所 (${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)})`;
     setStatus('地図上の位置を選びました。名前などを入力して登録してね。');
     document.getElementById('register').scrollIntoView({behavior:'smooth'})
   });
