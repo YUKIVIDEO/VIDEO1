@@ -26,12 +26,12 @@
 <script>
 const SUPABASE_URL = 'https://dxulwufqorvsqlayadaj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_wxyhbGNmhlTpJSqU0PEGiA_0v6P1met';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let adminMode = false;
 async function toggleAdmin() {
   if (adminMode) {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     adminMode = false;
     updateAdminUI();
     alert('ログアウトしました。');
@@ -42,7 +42,7 @@ async function toggleAdmin() {
   if (!email) return;
   const password = prompt('パスワードを入力してください');
   if (!password) return;
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await db.auth.signInWithPassword({ email, password });
   if (error) {
     alert('ログインに失敗しました: ' + error.message);
   } else {
@@ -60,7 +60,7 @@ function updateAdminUI() {
 let spots = [], activeGenre = 'すべて', map = null, markers = {}, draft = null;
 
 async function loadSpots() {
-  const { data, error } = await supabase.from('spots').select('*').order('created_at', { ascending: false });
+  const { data, error } = await db.from('spots').select('*').order('created_at', { ascending: false });
   if (!error && data) {
     spots = data;
   }
@@ -101,10 +101,10 @@ document.getElementById('form').onsubmit=async e=>{
   let s={name:n,genre:g,cost:c,address:a,desc:d,lat:p?.lat??null,lng:p?.lng??null};
   
   if(id){
-    const { error } = await supabase.from('spots').update(s).eq('id', id);
+    const { error } = await db.from('spots').update(s).eq('id', id);
     if(error) setStatus('更新に失敗しました: '+error.message, false);
   } else {
-    const { error } = await supabase.from('spots').insert([s]);
+    const { error } = await db.from('spots').insert([s]);
     if(error) setStatus('登録に失敗しました: '+error.message, false);
   }
   
@@ -137,7 +137,7 @@ async function deleteSpot(id){
   if(!adminMode){alert('削除は管理者のみ利用できます。');return;}
   let s=spots.find(x=>String(x.id)===String(id));
   if(!s||!confirm('「'+s.name+'」を削除しますか？'))return;
-  const { error } = await supabase.from('spots').delete().eq('id', id);
+  const { error } = await db.from('spots').delete().eq('id', id);
   if(error){ alert('削除エラー: ' + error.message); return; }
   await loadSpots();
   setStatus('スポットを削除しました。');
