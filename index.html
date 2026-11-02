@@ -27,7 +27,7 @@
 // ★ここにご自身のURLとPublishable keyを貼ってください
 const SUPABASE_URL = 'https://dxulwufqorvsqlayadaj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_wxy...';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let adminMode = false;
 async function toggleAdmin() {
